@@ -20,7 +20,7 @@ import java.util.Random;
  */
 public class Treap {
 
-    public static View view = View.medium;
+    public static View view = View.small;
     Node root;
 
 
@@ -40,15 +40,27 @@ public class Treap {
         return search(root, value) != null;
     }
 
-    public Statistic getStats(int a, int b) {
+    public Long getStats(int a, int b) {
         if (a > b) {
-            return null;
+            return 0L;
         }
         // [0 < a) [a < N)
         Node[] low = root.split(a);
         // [a < b) [b < N)
         Node[] high = low[1].split(b - a);
-        return high[0].statistic;
+        return inorder(high[0]);
+    }
+
+    private static class ForRes {
+        private Long sum;
+
+        public ForRes(Long sum) {
+            this.sum = sum;
+        }
+
+        public Long getSum() {
+            return sum;
+        }
     }
 
     public void setAll(int a, int b, int value) {
@@ -124,10 +136,26 @@ public class Treap {
 
 
 
-    public List<String> inorder(Node subRoot) {
-        List<String> res = new ArrayList<>();
-        inorder(subRoot, res);
-        return res;
+//    public List<String> inorder(Node subRoot) {
+//        List<String> res = new ArrayList<>();
+//        inorder(subRoot, res);
+//        return res;
+//    }
+
+    public Long inorder(Node subRoot) {
+        ForRes forRes = new ForRes(0L);
+        inorder(subRoot, forRes);
+        return forRes.sum;
+    }
+
+    private void inorder(Node subRoot, ForRes forRes) {
+        if (subRoot == null) {
+            return;
+        }
+        //cur.pushPromise();
+        inorder(subRoot.left, forRes);
+        forRes.sum += subRoot.value;
+        inorder(subRoot.right, forRes);
     }
 
     public Node[] split(int pos) {
@@ -184,7 +212,7 @@ public class Treap {
         if (cur == null) {
             return;
         }
-        cur.pushPromise();
+        //cur.pushPromise();
         inorder(cur.left, res);
         res.add(cur.toString());
         inorder(cur.right, res);
@@ -217,6 +245,7 @@ public class Treap {
         Integer value;
         int addPromise;
         boolean isReversed;
+
         Statistic statistic = new Statistic();
 
         public Node(java.lang.Integer value) {
@@ -336,12 +365,12 @@ public class Treap {
                 return String.valueOf(value);
             }
             if(Treap.view == View.small){
-                return String.format("(%d/+%d %b)", valueOf(this), addPromise, isReversed);
+                return String.format("(%d/+%d)", valueOf(this), addPromise);
             }
             if(Treap.view == View.medium){
-                return String.format("(%d,%d[%d]/+%d %b)", valueOf(this), priority, size, addPromise, isReversed);
+                return String.format("(%d,%d[%d]/+)", valueOf(this), priority, size);
             }
-            return String.format("(%d[%d]/m%d s%d M%d +%d %b)", valueOf(this), size, statistic.minValue, statistic.sumValue, statistic.maxValue, addPromise, isReversed);
+            return String.format("(%d[%d]/m%d s%d M%d +%d)", valueOf(this), size, statistic.minValue, statistic.sumValue, statistic.maxValue, addPromise);
         }
 
         public void addToPromiseAdd(int add) {
@@ -353,25 +382,12 @@ public class Treap {
         public void pushPromise() {
             if (left != null) {
                 left.addToPromiseAdd(addPromise);
-                if (isReversed) {
-                    left.reversePromise();
-                }
             }
             if (right != null) {
                 right.addToPromiseAdd(addPromise);
-                if (isReversed) {
-                    right.reversePromise();
-                }
             }
             value += addPromise;
             addToPromiseAdd(-addPromise); //reset to zero and recalculate
-
-            if (isReversed) {
-                Node tmp = left;
-                left = right;
-                right = tmp;
-                isReversed = false;
-            }
         }
 
         private void reversePromise() {
